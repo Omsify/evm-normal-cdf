@@ -1,0 +1,166 @@
+/* Function Interfaces */
+#define function cdf(int256 x, int256 mean, int256 deviation) pure returns (int256)
+
+#define constant WAD = 0xde0b6b3a7640000 // 1e18
+#define constant TWO_WAD = 0x1bc16d674ec80000 // 2e18
+#define constant MINUS_WAD = 0xfffffffffffffffffffffffffffffffffffffffffffffffff21f494c589c0000 // -1e18
+#define constant MINUS_ONE = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff // -1
+
+#define constant ERFC_DOMAIN_UPPER = 0x5698eef0666fffff // int256(6.24 ether)-1
+#define constant ERFC_DOMAIN_LOWER = 0xffffffffffffffffffffffffffffffffffffffffffffffffa967110f99900001 // -int256(6.24 ether)+1
+#define constant SQRT_2 = 0x13a04bbdfdc9be88 // 1_414213562373095048
+
+/* Macros */
+
+/// #notice Complementary error function
+#define macro ERFC() = takes (1) returns (1) {
+    // input stack: [x]
+
+    dup1 dup1 0x00 eq // [x==0, x, x]
+    return_1 jumpi // [x, x]
+    dup1 dup1 [ERFC_DOMAIN_UPPER] slt // [x>ERFC_DOMAIN_UPPER, x]
+    return_0 jumpi // [x]
+    dup1 dup1 [ERFC_DOMAIN_LOWER] sgt // [x<ERFC_DOMAIN_LOWER, x]
+    return_2 jumpi // [x]
+
+    dup1 dup1 0x00 slt // [x>0, x, x]
+    zFound jumpi
+    [MINUS_ONE] mul // [-1*x=|x|, x]
+
+    zFound: // [z=|x|, x]
+
+0x15276123ba5a365c dup2 lt pivot0 jumpi
+0x22e2f8dd9b2090f1 dup2 lt pivot10 jumpi
+0x2e0de3be1f98084c dup2 lt pivot110 jumpi
+0x3b2b561061d447bf dup2 lt pivot1110 jumpi
+0x1b166 polyval_end jump
+pivot1110:
+0x32e0bb973dc067bf dup2 lt pivot11100 jumpi
+[WAD] [WAD] [WAD] [WAD] [WAD] 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffb4f7b83d7fc dup7 mul sdiv 0x6080f6e5eec1 add dup6 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffffffce52c28a11d40 add dup5 mul sdiv 0xccb4ee33d254e add dup4 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffffe59ec2dae2a8e3 add dup3 mul sdiv 0x15c61adf723f84 add polyval_end jump
+pivot11100:
+[WAD] [WAD] [WAD] [WAD] 0x43531febefb4 dup6 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffffffc281c314ae6c7 add dup5 mul sdiv 0x1517938d3eea9c add dup4 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffffcc79d7a6ceea5b add dup3 mul sdiv 0x2f46c81da53c92 add polyval_end jump
+pivot110:
+0x279af3d845cba062 dup2 lt pivot1100 jumpi
+0x2a7fc601dc399ce2 dup2 lt pivot11010 jumpi
+[WAD] [WAD] [WAD] [WAD] 0x16df44b7c5e37 dup6 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffffecbe75f652daa4 add dup5 mul sdiv 0x617c6187649962 add dup4 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffff241fa076f3b556 add dup3 mul sdiv 0xba74fcc60af96f add polyval_end jump
+pivot11010:
+[WAD] [WAD] [WAD] [WAD] [WAD] 0xfffffffffffffffffffffffffffffffffffffffffffffffffffba6bb6150d0d8 dup7 mul sdiv 0x44e8be52b2a3de add dup6 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffffe49ac7722a0204c add dup5 mul sdiv 0x5777a0893a1a1d6 add dup4 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffff73c7dd95c9cede0 add dup3 mul sdiv 0x5a53797df13218c add polyval_end jump
+pivot1100:
+0x251d137d48b2926f dup2 lt pivot11000 jumpi
+[WAD] [WAD] [WAD] [WAD] 0xaf5b9f4fa2acd dup6 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffff7d8e65f795b966 add dup5 mul sdiv 0x24896a8d622d94e add dup4 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffffb6e662a7001f218 add dup3 mul sdiv 0x371d25171aa0fa6 add polyval_end jump
+pivot11000:
+[WAD] [WAD] [WAD] [WAD] [WAD] 0xffffffffffffffffffffffffffffffffffffffffffffffffffef768c37ba1768 dup7 mul sdiv 0xec3ddc81dbe85b add dup6 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffffab1973fcb54bff8 add dup5 mul sdiv 0xf5c3e0db1a58197 add dup4 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffe999fc8579d2b397 add dup3 mul sdiv 0xd2bda54122d3c87 add polyval_end jump
+pivot10:
+0x1d10c722bca85c97 dup2 lt pivot100 jumpi
+0x20d7138d4e905bf1 dup2 lt pivot1010 jumpi
+[WAD] [WAD] [WAD] [WAD] [WAD] 0xffffffffffffffffffffffffffffffffffffffffffffffffffe68d038fa29488 dup7 mul sdiv 0x15c4511d23a737d add dup6 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffff87e2f43aa5dc01d add dup5 mul sdiv 0x14e546bc901b82e0 add dup4 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffe2a398580605ecef add dup3 mul sdiv 0x10acd3bb28a11ff9 add polyval_end jump
+pivot1010:
+0x1eea613b85e91106 dup2 lt pivot10100 jumpi
+[WAD] [WAD] [WAD] [WAD] 0x3b4eb73504227c dup6 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffffd9d9fa4856e262e add dup5 mul sdiv 0x947a97a9c04df5e add dup4 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffefcc0a506d22e138 add dup3 mul sdiv 0xab7e650535bdb42 add polyval_end jump
+pivot10100:
+[WAD] [WAD] [WAD] [WAD] [WAD] 0xffffffffffffffffffffffffffffffffffffffffffffffffffd535dc7a1172f0 dup7 mul sdiv 0x22431441e5b3059 add dup6 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffff4e335b3bc5cfbf9 add dup5 mul sdiv 0x1d3a145229fc56e4 add dup4 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffd900c14f06505b32 add dup3 mul sdiv 0x15234d04402168ae add polyval_end jump
+pivot100:
+0x19643bf41bbdbaea dup2 lt pivot1000 jumpi
+0x1b3e256fba97591e dup2 lt pivot10010 jumpi
+[WAD] [WAD] [WAD] [WAD] [WAD] 0xffffffffffffffffffffffffffffffffffffffffffffffffffd17c9fb75a7a34 dup7 mul sdiv 0x24b800a743a367c add dup6 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffff43d3434d01dc145 add dup5 mul sdiv 0x1e98ace4f3ef7b89 add dup4 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffd78e7a375f2021e2 add dup3 mul sdiv 0x15bfc018ce82a283 add polyval_end jump
+pivot10010:
+[WAD] [WAD] [WAD] [WAD] [WAD] 0xffffffffffffffffffffffffffffffffffffffffffffffffffd5af1b7bec8f58 dup7 mul sdiv 0x222d868acd79e86 add dup6 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffff4dabcb89a224138 add dup5 mul sdiv 0x1d676d9d25271e72 add dup4 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffd8b63ed24832e7f4 add dup3 mul sdiv 0x154d1a8831ab5c2e add polyval_end jump
+pivot1000:
+0x175ae0b9f19d2c29 dup2 lt pivot10000 jumpi
+[WAD] [WAD] [WAD] [WAD] 0xa9ed8c27f209d4 dup6 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffffa1a0d02a81f7c3f add dup5 mul sdiv 0x140ced1a6804d2e3 add dup4 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffe10d17a8d4c31b21 add dup3 mul sdiv 0x12537fd905215348 add polyval_end jump
+pivot10000:
+[WAD] [WAD] [WAD] [WAD] 0xaf09c40508c9bd dup6 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffff9f6473ac7b2fd4f add dup5 mul sdiv 0x146ab7b9183ee4aa add dup4 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffe09febeb16f65e3d add dup3 mul sdiv 0x12831a1df9c3b097 add polyval_end jump
+pivot0:
+0xb4d65d8f40344fc dup2 lt pivot00 jumpi
+0x1094ef9fbec3d4b6 dup2 lt pivot010 jumpi
+0x137b627d03461c6c dup2 lt pivot0110 jumpi
+[WAD] [WAD] [WAD] [WAD] 0x93453c764b765e dup6 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffffa9ee1414f0a1724 add dup5 mul sdiv 0x12eaadb01a2f6c67 add dup4 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffe224d96782054c33 add dup3 mul sdiv 0x11ef5789d63b6089 add polyval_end jump
+pivot0110:
+0x11fbe70cbac7a6c0 dup2 lt pivot01100 jumpi
+[WAD] [WAD] [WAD] [WAD] [WAD] 0x78acd3b782cf38 dup7 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffffd2f1feb8bfd0734 add dup6 mul sdiv 0x4622ed82d5687e6 add dup5 mul sdiv 0x4db8c10bb45c303 add dup4 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffec455b94f975296f add dup3 mul sdiv 0xf0416c118bb32e1 add polyval_end jump
+pivot01100:
+[WAD] [WAD] [WAD] [WAD] 0x11bb6ad1515c60 dup6 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffffd54a2001efca79e add dup5 mul sdiv 0xd76c2d8d6632ce4 add dup4 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffe7078e834c6fd2c6 add dup3 mul sdiv 0x104a505ca92f15ec add polyval_end jump
+pivot010:
+0xdec41b3d427011e dup2 lt pivot0100 jumpi
+0xf3c9a50d183266f dup2 lt pivot01010 jumpi
+[WAD] [WAD] [WAD] [WAD] 0xffffffffffffffffffffffffffffffffffffffffffffffffffb3581db09aa93f dup6 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffff177695677a45ad add dup5 mul sdiv 0xa4ef9e31ebf53dc add dup4 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffe98b0f3670f1540d add dup3 mul sdiv 0xf8a024229bb9262 add polyval_end jump
+pivot01010:
+[WAD] [WAD] [WAD] [WAD] 0xffffffffffffffffffffffffffffffffffffffffffffffffff4769520e47e4ee dup6 mul sdiv 0xf1494df7064696 add dup5 mul sdiv 0x742a3b6b74d249c add dup4 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffebc6747573de5909 add dup3 mul sdiv 0xeed0c01659a2d69 add polyval_end jump
+pivot0100:
+0xc9e425e5e7decc8 dup2 lt pivot01000 jumpi
+[WAD] [WAD] [WAD] [WAD] [WAD] 0xf7a8a5b5165391 dup7 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffffa34030203d1be7a add dup6 mul sdiv 0xb97c887efd013e4 add dup5 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffffc16c00a7a03211b add dup4 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffff1a20cecc97e0fd7 add dup3 mul sdiv 0xdb295a5e8c8bd63 add polyval_end jump
+pivot01000:
+[WAD] [WAD] [WAD] [WAD] [WAD] 0xeb6a4e293a46c3 dup7 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffffa6ac3e710b02281 add dup6 mul sdiv 0xb35cd365c52faa6 add dup5 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffffc6e74501fae7b38 add dup4 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffff17ac83e06ec20b7 add dup3 mul sdiv 0xdb99ec63dd7d590 add polyval_end jump
+pivot00:
+0x4e8e6907bfe5347 dup2 lt pivot000 jumpi
+0x87901223a7a7226 dup2 lt pivot0010 jumpi
+0x9f15d707bb494e3 dup2 lt pivot00110 jumpi
+[WAD] [WAD] [WAD] [WAD] [WAD] 0xc5691ccff637ba dup7 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffffb0461079086ee60 add dup6 mul sdiv 0xa3d3eed82907b72 add dup5 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffffd37b3ca3b2698eb add dup4 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffff1293eb8f2ed9bcc add dup3 mul sdiv 0xdc6d8521e6d4fc7 add polyval_end jump
+pivot00110:
+[WAD] [WAD] [WAD] [WAD] 0xfffffffffffffffffffffffffffffffffffffffffffffffffda379a90148e02d dup6 mul sdiv 0x6abb6503298ab09 add dup5 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffffa638f3dce5f687 add dup4 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffff054dbd2d381ab96 add dup3 mul sdiv 0xde3df067e509aeb add polyval_end jump
+pivot0010:
+0x66236e9deb4ea38 dup2 lt pivot00100 jumpi
+[WAD] [WAD] [WAD] [WAD] [WAD] 0xac42005a07425 dup7 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffffd58f14c2bed6784 add dup6 mul sdiv 0x73b780cb8425fc5 add dup5 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffff2cf6368a8ee999 add dup4 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffff08489f826f129d9 add dup3 mul sdiv 0xddcb009fdd0a8ae add polyval_end jump
+pivot00100:
+[WAD] [WAD] [WAD] [WAD] 0xfffffffffffffffffffffffffffffffffffffffffffffffffd99c13591eef2bf dup6 mul sdiv 0x6dcae70aa34c133 add dup5 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffff681b424cdbf039 add dup4 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffff0737953fc5e43c8 add dup3 mul sdiv 0xdde918ebb2f3af1 add polyval_end jump
+pivot000:
+0x25ac07fcce3e0a0 dup2 lt pivot0000 jumpi
+0x398337fa2bc8fe3 dup2 lt pivot00010 jumpi
+[WAD] [WAD] [WAD] [WAD] [WAD] 0xffffffffffffffffffffffffffffffffffffffffffffffffff1854251d82088e dup7 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffff5722d51a475948 add dup6 mul sdiv 0x584975db678c6f4 add dup5 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffffed8ba4d4403736 add dup4 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffff059843f3d5d58ac add dup3 mul sdiv 0xde097f1b6165825 add polyval_end jump
+pivot00010:
+[WAD] [WAD] [WAD] [WAD] 0xfffffffffffffffffffffffffffffffffffffffffffffffffe72625a33b7fe78 dup6 mul sdiv 0x5db3c402feceee4 add dup5 mul sdiv 0xffffffffffffffffffffffffffffffffffffffffffffffffffde37d4e6e8504e add dup4 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffff05ab4d76daacd0d add dup3 mul sdiv 0xde0914a7bec89ed add polyval_end jump
+pivot0000:
+0x128ab9b8a399fb0 dup2 lt pivot00000 jumpi
+[WAD] [WAD] [WAD] [WAD] 0xffffffffffffffffffffffffffffffffffffffffffffffffff0af4edc0234654 dup6 mul sdiv 0x5740b06ac99882e add dup5 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffffff8c19eb90ddcaf add dup4 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffff057a1d0ce381f22 add dup3 mul sdiv 0xde0b3e99287f50c add polyval_end jump
+pivot00000:
+[WAD] [WAD] [WAD] [WAD] [WAD] 0xfffffffffffffffffffffffffffffffffffffffffffffffffe4542bb968b8933 dup7 mul sdiv 0x15226fd7e2307a add dup6 mul sdiv 0x53391114286721f add dup5 mul sdiv 0x8a32eeef924d add dup4 mul sdiv 0xfffffffffffffffffffffffffffffffffffffffffffffffff0572aa2e9171b0c add dup3 mul sdiv 0xde0b6baa3168cc3 add polyval_end jump
+
+
+    // [z, x] -> [wad x (n-1), z, x] -> [c_n, wad x (n-1), z, x] -> [z, c_n, wad x (n-1), z, x] ->
+    // [c_n*z, wad x (n-1), z, x] -> [c_n*z/wad, wad x (n-2), z, x] ->
+    // [c_(n-1), c_n*z/wad, wad x (n-2), z, x] -> [p1 = c_(n-1) + c_n*z/wad, wad x (n-2), z, x] -> ...
+    // [WAD] [WAD] ... c_n dup3 mul sdiv c_(n-1) add ...
+
+    // Interval ends
+    // [83505277633666992, 169659591110680736, 259013601857933283, 353786078978528071, 459990490036890168, 610520471007031846, 716456553421772003, 814419090105124092, 909237147855088840, 1003249057611055390, 1097922081074652783, 1194843270539367606, 1295883359658419904, 1403823997921401964, 1524293804966426204, 1682904500003482665, 1829653268242741994, 1963047649382193438, 2094392778735246487, 2227699873965740294, 2366381626835885041, 2513845172700221681, 2674315182539444847, 2853861424102088802, 3062383982927256802, 3318558906155272268, 3666136354930059199, 4263596100597073855, 6240000000000000000]
+
+    return_0:
+    0x00 erfc_x_found jump
+    return_1:
+    [WAD] erfc_x_found jump
+    return_2:
+    [TWO_WAD] erfc_x_found jump
+
+    polyval_end: // [erfc(z), z, x]
+    dup3 0x00 slt // [x>0, erfc(z), z, x]
+    erfc_x_found jumpi // [erfc(z), z, x]
+    [TWO_WAD] sub // [2-erfc(z) = erfc(x), z, x]
+
+    erfc_x_found: // [erfc(x), z, x]
+}
+
+#define macro CDF() = takes (1) returns (1) {
+    // input stack: [x]
+    [WAD] mul // [x*wad]
+    [SQRT_2] // [SQRT_2, x*wad]
+    swap1 sdiv // [divWad(x, SQRT_2)]
+    ERFC() // [erfc(divWad(x, SQRT_2))]
+    0x2 swap1 // [erfc(divWad(x, SQRT_2)), 2]
+    sdiv [WAD] sub // [cdf(x)]
+}
+
+#define macro MAIN() = takes (0) returns (0) {
+    0x44 calldataload // [d=deviation]
+    0x24 calldataload // [m=mean, d]
+    0x04 calldataload // [x, m, d]
+    sub // [x-m, d]
+    [WAD] mul // [wad*(x-m), d]
+    sdiv // [divWad(x-m, d)]
+    CDF()
+    
+
+    // Return the result
+    0x00 mstore // []
+    0x20 0x00				// [0x00, 32]
+	return					// []
+}
